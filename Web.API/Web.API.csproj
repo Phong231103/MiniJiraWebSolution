@@ -15,8 +15,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Web.Infrastructure\Web.Infrastructure.csproj" />
     <ProjectReference Include="..\Web.Application\Web.Application.csproj" />
+    <ProjectReference Include="..\Web.Infrastructure\Web.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Middleware\" />
+    <Folder Include="Filter\" />
   </ItemGroup>
 
 </Project>

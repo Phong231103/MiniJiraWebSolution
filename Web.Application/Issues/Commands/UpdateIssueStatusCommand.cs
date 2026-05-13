@@ -1,4 +1,4 @@
-namespace Web.Application.Issues.Commands.UpdateIssueStatus;
+namespace Web.Application.Issues.Commands;
 
 using System;
 using System.Threading;

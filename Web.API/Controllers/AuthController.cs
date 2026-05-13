@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿//using Microsoft.AspNetCore.Mvc;
 
-namespace Web.API.Controllers
-{
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AuthController : ControllerBase
-    {
-
-    }
-}
+//namespace Web.API.Controllers
+//{
+//    [Route("api/[controller]")]
+//    [ApiController]
+//    public class AuthController : ControllerBase
+//    {
+//        public
+//    }
+//}

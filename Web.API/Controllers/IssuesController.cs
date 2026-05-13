@@ -4,10 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using MediatR;
 using System;
 using System.Threading.Tasks;
-using Web.Application.Issues.Commands.CreateIssue;
-using Web.Application.Issues.Commands.UpdateIssueStatus;
 using Web.Application.Issues.Queries.GetProjectBacklog;
 using Web.Application.Issues.Queries.GetSprintBoard;
+using Web.Application.Issues.Commands;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -45,7 +44,7 @@ public class IssuesController : ControllerBase
         var issues = await _mediator.Send(new GetProjectBacklogQuery(projectId));
         return Ok(issues);
     }
-    
+
     [HttpGet("sprint/{sprintId}/board")]
     public async Task<IActionResult> GetSprintBoard(Guid sprintId)
     {

@@ -1,7 +1,6 @@
-namespace Web.Application.Issues.Commands.CreateIssue;
+namespace Web.Application.Issues.Commands;
 
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
