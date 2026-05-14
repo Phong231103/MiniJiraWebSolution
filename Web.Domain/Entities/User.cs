@@ -1,20 +1,23 @@
 namespace Web.Domain.Entities;
 
+using System;
 using Web.Domain.Common;
 
 public class User : BaseEntity
 {
+    public Guid? Id { get; set; }
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; }
     public string PasswordHash { get; private set; }
     public string? RefreshToken { get; private set; }
     public DateTime RefreshTokenExpiry { get; private set; }
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LockoutEnd { get; private set; }
-    public bool EmailConfirmed { get; private set; }
-    public bool PhoneNumberConfirmed { get; private set; }
     public string? AvatarUrl { get; set; }
+    public bool IsActive { get; set; } = true;
+
 
     // 2. Password Service (Argon2/BCrypt)
     //public class PasswordService

@@ -13,6 +13,7 @@ public interface IApplicationDbContext
     DbSet<Issue> Issues { get; }
     DbSet<Comment> Comments { get; }
     DbSet<Attachment> Attachments { get; }
+    DbSet<Roles> Roles { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }

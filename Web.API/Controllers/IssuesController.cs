@@ -26,7 +26,7 @@ public class IssuesController : ControllerBase
         return CreatedAtAction(nameof(Create), new { id }, id);
     }
 
-    [HttpPatch("{id}/status")]
+    [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateIssueStatusCommand command)
     {
         if (id != command.IssueId)

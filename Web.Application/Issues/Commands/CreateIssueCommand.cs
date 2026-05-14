@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Web.Application.Common.Interfaces;
+using Web.Application.Common.Results;
 using Web.Domain.Entities;
 using Web.Domain.Enums;
 
@@ -21,7 +22,7 @@ public record CreateIssueCommand : IRequest<Guid>
     public Guid? SprintId { get; init; }
 }
 
-public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Guid>
+public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Result<Guid>>
 {
     private readonly IApplicationDbContext _context;
 
@@ -30,24 +31,34 @@ public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Gui
         _context = context;
     }
 
-    public async Task<Guid> Handle(CreateIssueCommand request, CancellationToken cancellationToken)
+    public async Task<Result<Guid>> Handle(CreateIssueCommand request, CancellationToken cancellationToken)
     {
         // H2: Basic input validation
         if (string.IsNullOrWhiteSpace(request.Summary))
-            throw new ArgumentException("Summary is required.");
+        {
+            return Result<Guid>.Failure(Error.Required);
+        }
 
         if (request.ProjectId == Guid.Empty)
-            throw new ArgumentException("ProjectId is required.");
+        {
+            return Result<Guid>.Failure(Error.Required);
+        }
 
         if (request.ReporterId == Guid.Empty)
-            throw new ArgumentException("ReporterId is required.");
+        {
+            return Result<Guid>.Failure(Error.Required);
+        }
 
         // Generate issue key based on project key and issue count
         var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == request.ProjectId, cancellationToken);
+
         if (project == null)
-            throw new ArgumentException("Project not found.");
+        {
+            return Result<Guid>.Failure(Error.NotFound);
+        }
 
         var issueCount = await _context.Issues.CountAsync(i => i.ProjectId == request.ProjectId, cancellationToken);
+
         var issueKey = $"{project.Key}-{issueCount + 1}";
 
         var issue = new Issue
@@ -67,7 +78,8 @@ public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Gui
         };
 
         _context.Issues.Add(issue);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        return await Task.FromResult(new Result(true, _context.SaveChangesAsync(cancellationToken)));
 
         return issue.Id;
     }

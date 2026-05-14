@@ -14,6 +14,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Issue> Issues => Set<Issue>();
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
+    public DbSet<Roles> Roles => Set<Roles>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
