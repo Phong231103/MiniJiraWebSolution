@@ -1,32 +1,28 @@
 ﻿namespace Web.API.Common
 {
-    public record ApiResponse<T>
+    public class ApiResponse<T>
     {
-        public bool IsSuccess { get; init; }
+        public bool Success { get; init; }
         public T? Data { get; init; }
+        public string? ErrorCode { get; init; }
         public string? Message { get; init; }
-        public IDictionary<string, string[]>? Errors { get; init; }
-        public int StatusCode { get; init; }
 
-        public static ApiResponse<T> Success(T data, string message = "Success", int statusCode = 200)
-            => new()
-            {
-                IsSuccess = true,
-                Data = data,
-                Message = message,
-                StatusCode = statusCode
-            };
+        // Factory methods cho thành công
+        public static ApiResponse<T> Ok(T data, string? message = null) =>
+            new ApiResponse<T> { Success = true, Data = data, Message = message };
 
-        public static ApiResponse<T> Failure(string message, int statusCode = 400, IDictionary<string, string[]>? errors = null)
-            => new()
-            {
-                IsSuccess = false,
-                Message = message,
-                Errors = errors,
-                StatusCode = statusCode
-            };
+        // Factory methods cho thất bại
+        public static ApiResponse<T> Fail(string errorCode, string message) =>
+            new ApiResponse<T> { Success = false, ErrorCode = errorCode, Message = message };
     }
 
-    // ApiResponse (non-generic)
-    public record ApiResponse : ApiResponse<object?>;
+    // Overload cho các Command không trả về dữ liệu (chỉ báo thành công/thất bại)
+    public class ApiResponse : ApiResponse<object>
+    {
+        public static ApiResponse Ok(string? message = null) =>
+            new ApiResponse { Success = true, Message = message };
+
+        public new static ApiResponse Fail(string errorCode, string message) =>
+            new ApiResponse { Success = false, ErrorCode = errorCode, Message = message };
+    }
 }

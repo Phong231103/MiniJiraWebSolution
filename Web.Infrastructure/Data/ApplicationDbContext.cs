@@ -14,7 +14,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Issue> Issues => Set<Issue>();
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Attachment> Attachments => Set<Attachment>();
-    public DbSet<Roles> Roles => Set<Roles>();
+    public DbSet<Role> Roles => Set<Role>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -75,5 +75,21 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             .WithOne(a => a.Issue)
             .HasForeignKey(a => a.IssueId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // User -> Roles (many-to-many)
+        builder.Entity<Role>(entity =>
+        {
+            entity.HasKey(r => r.Id); // Ch? ??nh kh?a ch?nh
+
+            entity.Property(r => r.Name)
+                  .IsRequired()       // T??ng ???ng [Required]
+                  .HasMaxLength(256); // T??ng ???ng [MaxLength(256)]
+
+            entity.Property(r => r.DisplayName)
+                  .IsRequired()
+                  .HasMaxLength(256);
+
+            entity.HasIndex(r => r.Name).IsUnique(); // T?n Role n?n l? duy nh?t
+        });
     }
 }

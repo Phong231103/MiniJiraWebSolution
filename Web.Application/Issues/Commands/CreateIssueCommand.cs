@@ -6,23 +6,21 @@ using System.Threading.Tasks;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Web.Application.Common.Interfaces;
-using Web.Application.Common.Results;
 using Web.Domain.Entities;
 using Web.Domain.Enums;
+using Web.Domain.Primitives;
 
-public record CreateIssueCommand : IRequest<Guid>
+public record CreateIssueCommand : IRequest<Result<bool>>
 {
     public string Summary { get; init; } = string.Empty;
     public string? Description { get; init; }
     public IssueType Type { get; init; }
     public IssuePriority Priority { get; init; }
     public Guid? AssigneeId { get; init; }
-    public Guid ReporterId { get; init; }
-    public Guid ProjectId { get; init; }
     public Guid? SprintId { get; init; }
 }
 
-public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Result<Guid>>
+public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Result<bool>>
 {
     private readonly IApplicationDbContext _context;
 
@@ -31,22 +29,12 @@ public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Res
         _context = context;
     }
 
-    public async Task<Result<Guid>> Handle(CreateIssueCommand request, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Handle(CreateIssueCommand request, CancellationToken cancellationToken)
     {
-        // H2: Basic input validation
         if (string.IsNullOrWhiteSpace(request.Summary))
         {
-            return Result<Guid>.Failure(Error.Required);
-        }
-
-        if (request.ProjectId == Guid.Empty)
-        {
-            return Result<Guid>.Failure(Error.Required);
-        }
-
-        if (request.ReporterId == Guid.Empty)
-        {
-            return Result<Guid>.Failure(Error.Required);
+            //return Error.NotFound "Summary is REQUIRED"));
+            return Error.Required("Summary is Required", "Summary is Required.");
         }
 
         // Generate issue key based on project key and issue count
@@ -54,7 +42,7 @@ public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Res
 
         if (project == null)
         {
-            return Result<Guid>.Failure(Error.NotFound);
+            return Error.NotFound("project NotFound", "project is NotFound.");
         }
 
         var issueCount = await _context.Issues.CountAsync(i => i.ProjectId == request.ProjectId, cancellationToken);
@@ -70,8 +58,6 @@ public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Res
             Type = request.Type,
             Priority = request.Priority,
             AssigneeId = request.AssigneeId,
-            ReporterId = request.ReporterId,
-            ProjectId = request.ProjectId,
             SprintId = request.SprintId,
             Status = IssueStatus.Backlog,
             CreatedAt = DateTime.UtcNow
@@ -79,8 +65,8 @@ public class CreateIssueCommandHandler : IRequestHandler<CreateIssueCommand, Res
 
         _context.Issues.Add(issue);
 
-        return await Task.FromResult(new Result(true, _context.SaveChangesAsync(cancellationToken)));
+        await _context.SaveChangesAsync(cancellationToken);
 
-        return issue.Id;
+        return Result<bool>.Success(true);
     }
 }

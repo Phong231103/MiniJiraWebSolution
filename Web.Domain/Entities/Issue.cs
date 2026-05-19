@@ -7,10 +7,10 @@ using Web.Domain.Enums;
 
 public class Issue : BaseEntity
 {
-    public string Key { get; set; } = string.Empty;
+    public string Key { get; set; } = string.Empty; // e.g., JIRA-123
     public string Summary { get; set; } = string.Empty;
     public string? Description { get; set; }
-    
+
     public IssueType Type { get; set; }
     public IssueStatus Status { get; set; } = IssueStatus.Backlog;
     public IssuePriority Priority { get; set; } = IssuePriority.Medium;

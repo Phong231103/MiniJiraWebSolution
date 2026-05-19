@@ -1,37 +1,79 @@
-namespace Web.Domain.Entities;
+﻿namespace Web.Domain.Entities;
 
 using System;
 using Web.Domain.Common;
+using Web.Domain.Repository;
 
 public class User : BaseEntity
 {
-    public Guid? Id { get; set; }
-    public string Username { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
-    public string PhoneNumber { get; set; }
-    public string PasswordHash { get; private set; }
+    public Guid Id { get; private set; } // Bỏ dấu ? đi, PK không được null
+    public string Username { get; private set; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
+    public string FullName { get; private set; } = string.Empty;
+    public string? PhoneNumber { get; private set; } // Thêm ? vì có thể không có SĐT
+    public string? AvatarUrl { get; private set; }
+    public bool IsActive { get; private set; } = true;
+
+    // Navigation property
+    public ICollection<Role> Roles { get; private set; } = new List<Role>();
+
+    // --- Các thuộc tính bảo mật ---
+    public string? PasswordHash { get; private set; } // Có thể null nếu user chưa set pass
     public string? RefreshToken { get; private set; }
     public DateTime RefreshTokenExpiry { get; private set; }
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LockoutEnd { get; private set; }
-    public string? AvatarUrl { get; set; }
-    public bool IsActive { get; set; } = true;
 
+    private User() { }
 
-    // 2. Password Service (Argon2/BCrypt)
-    //public class PasswordService
-    //{
-    //    public string HashPassword(string password)
-    //    {
-    //        return BCrypt.Net.BCrypt.HashPassword(password, 14); // OWASP recommended
-    //    }
+    public static User Create(string username, string email, string fullName, string plainPassword, IPasswordHasher passwordHasher)
+    {
+        if (string.IsNullOrWhiteSpace(plainPassword))
+            throw new ArgumentException("Password cannot be empty.");
 
-    //    public bool Verify(string password, string hash)
-    //    {
-    //        return BCrypt.Net.BCrypt.Verify(password, hash);
-    //    }
-    //}
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = username,
+            Email = email,
+            FullName = fullName,
+            IsActive = true
+        };
+
+        // Tự băm và gán mật khẩu ngay khi tạo
+        user.SetPassword(plainPassword, passwordHasher);
+        return user;
+    }
+
+    // Hành vi: Đặt mật khẩu
+    public void SetPassword(string plainPassword, IPasswordHasher passwordHasher)
+    {
+        PasswordHash = passwordHasher.HashPassword(plainPassword);
+    }
+
+    // Hành vi: Xác thực mật khẩu
+    public bool ValidatePassword(string plainPassword, IPasswordHasher passwordHasher)
+    {
+        if (PasswordHash is null) return false;
+        return passwordHasher.VerifyPassword(plainPassword, PasswordHash);
+    }
+
+    // Hành vi: Đăng nhập thất bại
+    public void RecordFailedLogin()
+    {
+        FailedLoginAttempts++;
+        if (FailedLoginAttempts >= 5) // Khóa tài khoản sau 5 lần
+        {
+            LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+        }
+    }
+
+    // Hành vi: Reset số lần đăng nhập thất bại
+    public void ResetLoginAttempts()
+    {
+        FailedLoginAttempts = 0;
+        LockoutEnd = null;
+    }
 }
 
 
