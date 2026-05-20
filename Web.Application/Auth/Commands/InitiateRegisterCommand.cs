@@ -47,6 +47,7 @@ namespace Web.Application.Auth.Commands
             };
 
             var cacheKey = $"reg_{registrationId}";
+
             await _cacheService.SetAsync(cacheKey, pendingData, TimeSpan.FromMinutes(5), cancellationToken);
 
             // 5. Gửi OTP qua Email

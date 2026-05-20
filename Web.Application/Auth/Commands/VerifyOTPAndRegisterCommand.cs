@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Web.Application.Auth.DTOs;
 using Web.Application.Auth.Models;
 using Web.Application.Common.Interfaces;
 using Web.Domain.Entities;
@@ -9,9 +10,9 @@ namespace Web.Application.Auth.Commands
 {
     public record VerifyOTPAndRegisterCommand(
     string RegistrationId,
-    string Otp) : IRequest<Result<bool>>; // AuthResponse chứa Token
+    string Otp) : IRequest<Result<AuthResponse>>; // AuthResponse chứa Token
 
-    public class VerifyOTPAndRegisterCommandHandler : IRequestHandler<VerifyOTPAndRegisterCommand, Result<bool>>
+    public class VerifyOTPAndRegisterCommandHandler : IRequestHandler<VerifyOTPAndRegisterCommand, Result<AuthResponse>>
     {
         private readonly ICacheService _cacheService;
         private readonly IApplicationDbContext _context;
@@ -30,10 +31,11 @@ namespace Web.Application.Auth.Commands
             _tokenGenerator = tokenGenerator;
         }
 
-        public async Task<Result<bool>> Handle(VerifyOTPAndRegisterCommand request, CancellationToken cancellationToken)
+        public async Task<Result<AuthResponse>> Handle(VerifyOTPAndRegisterCommand request, CancellationToken cancellationToken)
         {
             // 1. Lấy dữ liệu tạm từ Cache bằng RegistrationId
             var cacheKey = $"reg_{request.RegistrationId}";
+
             var pendingData = await _cacheService.GetAsync<PendingRegistration>(cacheKey, cancellationToken);
 
             // Nếu không tìm thấy -> OTP hết hạn hoặc RegistrationId giả
@@ -54,7 +56,7 @@ namespace Web.Application.Auth.Commands
                 pendingData.Email,
                 pendingData.FullName,
                 pendingData.PlainPassword,
-                _passwordHasher // Truyền hasher vào Entity theo đúng Pattern đã bàn
+                _passwordHasher
             );
 
             _context.Users.Add(user);
@@ -66,7 +68,7 @@ namespace Web.Application.Auth.Commands
             // 5. Generate JWT Token trả về cho Client
             var token = _tokenGenerator.GenerateToken(user);
 
-            return Result<bool>.Success(true);
+            return Result<AuthResponse>.Success(true);
         }
     }
 }

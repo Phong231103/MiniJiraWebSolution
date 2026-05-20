@@ -18,13 +18,12 @@ public static class DependencyInjection
 
         if (cacheProvider?.ToLower() == "redis")
         {
-            // Đăng ký Redis
             var redisConnection = configuration["CacheSettings:RedisConnectionString"];
 
             services.AddSingleton<IConnectionMultiplexer>(sp =>
             {
                 var config = ConfigurationOptions.Parse(redisConnection!);
-                config.AbortOnConnectFail = false; // Không crash app nếu không kết nối được Redis
+                config.AbortOnConnectFail = false;
                 return ConnectionMultiplexer.Connect(config);
             });
 
@@ -32,15 +31,13 @@ public static class DependencyInjection
         }
         else
         {
-            // Đăng ký In-Memory Cache (Dùng cho Dev local không có Docker)
             services.AddMemoryCache();
             services.AddScoped<ICacheService, InMemoryCacheService>();
         }
 
-        // 1. Bind cấu hình JwtSettings từ appsettings.json
+        // Đăng kí JwtSettings từ appsettings.json
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
 
-        // 2. Đăng ký IJwtTokenGenerator
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
         services.AddScoped<IApplicationDbContext>(provider =>

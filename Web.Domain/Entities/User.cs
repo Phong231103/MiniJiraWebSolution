@@ -16,13 +16,14 @@ public class User : BaseEntity
 
     // Navigation property
     public ICollection<Role> Roles { get; private set; } = new List<Role>();
+    public ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
 
     // --- Các thuộc tính bảo mật ---
     public string? PasswordHash { get; private set; } // Có thể null nếu user chưa set pass
-    public string? RefreshToken { get; private set; }
     public DateTime RefreshTokenExpiry { get; private set; }
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LockoutEnd { get; private set; }
+
 
     private User() { }
 
@@ -75,6 +76,23 @@ public class User : BaseEntity
     {
         FailedLoginAttempts = 0;
         LockoutEnd = null;
+    }
+    
+    // Hành vi: Thêm Refresh Token mới
+    public void AddRefreshToken(string token, DateTime expires)
+    {
+        var refreshToken = RefreshToken.Create(Id, token, expires);
+        RefreshTokens.Add(refreshToken);
+    }
+
+    // Hành vi: Thu hồi Refresh Token cũ (Dùng trong luồng Rotation)
+    public void RevokeRefreshToken(string token)
+    {
+        var existingToken = RefreshTokens.FirstOrDefault(t => t.Token == token);
+        if (existingToken != null && existingToken.IsActive)
+        {
+            existingToken.Revoke();
+        }
     }
 }
 
