@@ -29,7 +29,9 @@ public class User : BaseEntity
     public static User Create(string username, string email, string fullName, string plainPassword, IPasswordHasher passwordHasher)
     {
         if (string.IsNullOrWhiteSpace(plainPassword))
+        {
             throw new ArgumentException("Password cannot be empty.");
+        }
 
         var user = new User
         {
