@@ -6,13 +6,13 @@ using Web.Domain.Primitives;
 
 namespace Web.Application.Auth.Commands
 {
-    public record InitiateRegisterCommand(string Email, string Password, string FullName) : IRequest<Result<string>>;
+    public record InitiateRegisterCommand(string Email, string Password, string FullName, string UserName) : IRequest<Result<string>>;
 
     public class InitiateRegisterCommandHandler : IRequestHandler<InitiateRegisterCommand, Result<string>>
     {
         private readonly IApplicationDbContext _context;
         private readonly ICacheService _cacheService;
-        private readonly IEmailService _emailService; // Gửi mail
+        private readonly IEmailService _emailService;
 
         public InitiateRegisterCommandHandler(IApplicationDbContext context, ICacheService cacheService, IEmailService emailService)
         {
@@ -43,7 +43,8 @@ namespace Web.Application.Auth.Commands
                 Email = request.Email,
                 PlainPassword = request.Password,
                 FullName = request.FullName,
-                Otp = otp
+                Otp = otp,
+                UserName = request.UserName
             };
 
             var cacheKey = $"reg_{registrationId}";

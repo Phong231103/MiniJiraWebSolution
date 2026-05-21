@@ -6,7 +6,6 @@ using Web.Domain.Repository;
 
 public class User : BaseEntity
 {
-    public Guid Id { get; private set; } // Bỏ dấu ? đi, PK không được null
     public string Username { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
     public string FullName { get; private set; } = string.Empty;
@@ -77,7 +76,7 @@ public class User : BaseEntity
         FailedLoginAttempts = 0;
         LockoutEnd = null;
     }
-    
+
     // Hành vi: Thêm Refresh Token mới
     public void AddRefreshToken(string token, DateTime expires)
     {
@@ -95,19 +94,3 @@ public class User : BaseEntity
         }
     }
 }
-
-
-
-// 3. JWT Service (Production secure)
-//public class JwtService
-//{
-//    public string GenerateToken(User user)
-//    {
-//        var token = new JwtSecurityToken(
-//            claims: GetClaims(user),
-//            expires: DateTime.UtcNow.AddMinutes(15), // Short-lived
-//            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
-//        );
-//        return new JwtSecurityTokenHandler().WriteToken(token);
-//    }
-//}

@@ -2,7 +2,7 @@
 using Web.API.Common;
 using Web.Domain.Primitives;
 
-namespace Web.API
+namespace Web.API.Response
 {
     // Presentation/WebApi/Extensions/ResultExtensions.cs
     public static class ResultExtensions
@@ -34,7 +34,7 @@ namespace Web.API
             if (result.IsFailure)
             {
                 // Tái sử dụng logic lỗi từ hàm trên
-                return ToActionResult(Result.Failure(result.Error), httpContext);
+                return Result.Failure(result.Error).ToActionResult(httpContext);
             }
 
             // Nếu thành công, bọc Data vào ApiResponse

@@ -1,7 +1,9 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Web.API.Common;
-using Web.Application.Issues.Commands;
+using Web.API.Response;
+using Web.Application.Auth.Commands;
+using Web.Application.Auth.DTOs;
 
 namespace Web.API.Controllers
 {
@@ -17,11 +19,19 @@ namespace Web.API.Controllers
         }
 
         [HttpPost("firstTimeRegistration")]
-        [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
-        public async Task<IActionResult> Register([FromBody] CreateIssueCommand command)
+        [ProducesResponseType(typeof(ApiResponse<string>), 200)]
+        public async Task<IActionResult> Register([FromBody] InitiateRegisterCommand command, CancellationToken cancellationToken)
         {
-            var id = await _mediator.Send(command);
-            return CreatedAtAction(nameof(Create), new { id }, id);
+            var id = await _mediator.Send(command, cancellationToken);
+            return id.ToActionResult<string>(HttpContext);
+        }
+
+        [HttpPost("verifyOtpAndRegister")]
+        [ProducesResponseType(typeof(ApiResponse<AuthResponse>), 200)]
+        public async Task<IActionResult> VerifyOtpAndRegister([FromBody] VerifyOTPAndRegisterCommand command)
+        {
+            var authResponse = await _mediator.Send(command);
+            return authResponse.ToActionResult<AuthResponse>(HttpContext);
         }
     }
 }

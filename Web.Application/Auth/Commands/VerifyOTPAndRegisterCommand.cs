@@ -68,7 +68,17 @@ namespace Web.Application.Auth.Commands
             // 5. Generate JWT Token trả về cho Client
             var token = _tokenGenerator.GenerateToken(user);
 
-            return Result<AuthResponse>.Success(true);
+            var refreshToken = _tokenGenerator.GenerateRefreshToken();
+
+            var response = new AuthResponse
+            {
+                AccessToken = token,
+                UserId = user.Id,
+                Email = user.Email,
+                RefreshToken = refreshToken
+            };
+
+            return Result<AuthResponse>.Success(response);
         }
     }
 }

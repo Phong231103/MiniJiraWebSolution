@@ -1,23 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Web.Domain.Entities
+﻿namespace Web.Domain.Entities
 {
     // Domain/Entities/RefreshToken.cs
     public class RefreshToken
     {
         public Guid Id { get; private set; }
-        public string Token { get; private set; } // Chuỗi ngẫu nhiên
+        public string Token { get; private set; } = string.Empty;
         public DateTime Expires { get; private set; }
         public bool IsRevoked { get; private set; }
         public DateTime Created { get; private set; }
+        public string? ReplacedByToken { get; private set; }
 
         // Khóa ngoại
         public Guid UserId { get; private set; }
-        public virtual User User { get; private set; } = null!;
+        public User User { get; private set; } = null!;
 
         // Constructor cho EF Core
         private RefreshToken() { }
@@ -42,7 +37,7 @@ namespace Web.Domain.Entities
             IsRevoked = true;
         }
 
-        // Hành vi: Kiểm tra còn hiệu lực không
+        // Kiểm tra còn hiệu lực không
         public bool IsActive => !IsRevoked && Expires > DateTime.UtcNow;
     }
 }

@@ -33,6 +33,8 @@
 
         public static Error Exist(string code, string message) =>
             new Error(code, message, ErrorType.Exist);
+        public static Error Fail(string code, string message) =>
+            new Error(code, message, ErrorType.Failure);
 
         // Đại diện cho trạng thái không có lỗi (Rất quan trọng cho Result)
         public static readonly Error None = new Error(string.Empty, string.Empty, ErrorType.Failure);

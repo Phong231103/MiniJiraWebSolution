@@ -1,22 +1,45 @@
-﻿using Web.Application.Common.Interfaces;
+﻿using StackExchange.Redis;
+using System.Text.Json;
+using Web.Application.Common.Interfaces;
 
 namespace Web.Infrastructure.Services
 {
     public class RedisCacheService : ICacheService
     {
-        public Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
+        private readonly IDatabase _db;
+
+        public RedisCacheService(IConnectionMultiplexer connectionMultiplexer)
         {
-            throw new NotImplementedException();
+            // Lấy database mặc định của Redis (thường là db0)
+            _db = connectionMultiplexer.GetDatabase();
         }
 
-        public Task RemoveAsync(string key, CancellationToken cancellationToken = default)
+        public async Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            // Lấy dữ liệu thô từ Redis dưới dạng RedisValue (string hoặc byte[])
+            var data = await _db.StringGetAsync(key);
+
+            if (data.IsNullOrEmpty)
+            {
+                return default;
+            }
+
+            // Deserialize (chuyển đổi) từ JSON string về lại object T
+            return JsonSerializer.Deserialize<T>(data!);
         }
 
-        public Task SetAsync<T>(string key, T value, TimeSpan? expiry = null, CancellationToken cancellationToken = default)
+        public async Task SetAsync<T>(string key, T value, TimeSpan? expiry = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            // Serialize (chuyển đổi) object T thành JSON string để lưu vào Redis
+            var jsonValue = JsonSerializer.Serialize(value);
+
+            // Lưu vào Redis. Nếu có expiry thì set thời gian hết hạn
+            await _db.StringSetAsync(key, jsonValue, expiry);
+        }
+
+        public async Task RemoveAsync(string key, CancellationToken cancellationToken = default)
+        {
+            await _db.KeyDeleteAsync(key);
         }
     }
 }

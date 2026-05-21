@@ -79,17 +79,55 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         // User -> Roles (many-to-many)
         builder.Entity<Role>(entity =>
         {
-            entity.HasKey(r => r.Id); // Ch? ??nh kh?a ch?nh
+            entity.HasKey(r => r.Id);
 
             entity.Property(r => r.Name)
-                  .IsRequired()       // T??ng ???ng [Required]
-                  .HasMaxLength(256); // T??ng ???ng [MaxLength(256)]
+                  .IsRequired()
+                  .HasMaxLength(256);
 
             entity.Property(r => r.DisplayName)
                   .IsRequired()
                   .HasMaxLength(256);
 
-            entity.HasIndex(r => r.Name).IsUnique(); // T?n Role n?n l? duy nh?t
+            entity.HasIndex(r => r.Name).IsUnique();
+        });
+
+        builder.Entity<User>(entity =>
+        {
+            entity.HasKey(u => u.Id);
+
+            entity.Property(u => u.Username)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+            entity.Property(u => u.Email)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+            entity.Property(u => u.FullName)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+            entity.HasIndex(u => u.Username).IsUnique();
+            entity.HasIndex(u => u.Email).IsUnique();
+
+            entity.HasMany(u => u.RefreshTokens)
+                  .WithOne(rt => rt.User)
+                  .HasForeignKey(rt => rt.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(u => u.Roles)
+                  .WithMany(r => r.Users)
+                  .UsingEntity<Dictionary<string, object>>(
+                        "UserRole",
+                        j => j.HasOne<Role>().WithMany().HasForeignKey("RoleId").OnDelete(DeleteBehavior.Cascade),
+                        j => j.HasOne<User>().WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.Cascade),
+                        j =>
+                        {
+                            j.HasKey("UserId", "RoleId");
+                            j.ToTable("UserRoles");
+                        });
+
         });
     }
 }

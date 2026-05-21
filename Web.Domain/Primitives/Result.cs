@@ -18,12 +18,21 @@
             Error = error;
         }
 
+        protected Result(bool isSuccess, string msg)
+        {
+            Massage = msg;
+            IsSuccess = isSuccess;
+        }
+
         public bool IsSuccess { get; }
         public bool IsFailure => !IsSuccess;
+        public string Massage { get; set; }
         public Error Error { get; }
 
         // Factory method tạo thành công
         public static Result Success() => new Result(true, Error.None);
+
+        public static Result Success(string msg) => new Result(true, msg);
 
         // Factory method tạo thất bại
         public static Result Failure(Error error) => new Result(false, error);
