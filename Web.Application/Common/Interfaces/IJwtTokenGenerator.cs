@@ -4,7 +4,7 @@ namespace Web.Application.Common.Interfaces
 {
     public interface IJwtTokenGenerator
     {
-        string GenerateToken(User user);
+        string GenerateToken(User user, bool isEmailToken);
 
         string GenerateRefreshToken();
     }

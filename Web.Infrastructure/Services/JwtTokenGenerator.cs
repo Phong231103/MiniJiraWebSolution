@@ -27,28 +27,30 @@ namespace Web.Infrastructure.Services
             _jwtSettings = jwtSettings.Value;
         }
 
-        public string GenerateToken(User user)
+        public string GenerateToken(User user, bool isEmailToken)
         {
             // 1. Tạo Signing Key từ chuỗi Secret
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             // 2. Định nghĩa các Claims (Thông tin đính kèm trong Token)
-            var claims = new List<Claim>
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()), // Subject (User ID)
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(JwtRegisteredClaimNames.Name, user.FullName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) // Unique ID cho token
-        };
 
-            // Thêm Roles vào claims (Nếu User có Roles)
-            // Lưu ý: ClaimTypes.Role giúp .NET tự động map với [Authorize(Roles = "Admin")]
-            if (user.Roles != null)
+            var claims = new List<Claim> { new Claim(JwtRegisteredClaimNames.Email, user.Email) };
+
+            if (!isEmailToken)
             {
-                foreach (var role in user.Roles)
+                claims.Add(new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()));
+                claims.Add(new Claim(JwtRegisteredClaimNames.Name, user.FullName));
+                claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
+
+                // Thêm Roles vào claims (Nếu User có Roles)
+                // Lưu ý: ClaimTypes.Role giúp .NET tự động map với [Authorize(Roles = "Admin")]
+                if (user.Roles != null)
                 {
-                    claims.Add(new Claim(ClaimTypes.Role, role.DisplayName));
+                    foreach (var role in user.Roles)
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, role.DisplayName));
+                    }
                 }
             }
 

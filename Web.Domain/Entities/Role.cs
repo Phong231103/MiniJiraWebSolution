@@ -8,5 +8,7 @@
 
         // Navigation property
         public ICollection<User> Users { get; set; } = new List<User>();
+
+        public ICollection<Permission> Permissions { get; set; } = new List<Permission>();
     }
 }

@@ -90,6 +90,18 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                   .HasMaxLength(256);
 
             entity.HasIndex(r => r.Name).IsUnique();
+
+            entity.HasMany(r => r.Permissions)
+                 .WithMany(p => p.Roles)
+                 .UsingEntity<Dictionary<string, object>>(
+                       "RolePermission",
+                       j => j.HasOne<Permission>().WithMany().HasForeignKey("RoleId").OnDelete(DeleteBehavior.Cascade),
+                       j => j.HasOne<Role>().WithMany().HasForeignKey("PermissionId").OnDelete(DeleteBehavior.Cascade),
+                       j =>
+                       {
+                           j.HasKey("PermissionId", "RoleId");
+                           j.ToTable("PermissionRoles");
+                       });
         });
 
         builder.Entity<User>(entity =>
@@ -127,7 +139,6 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                             j.HasKey("UserId", "RoleId");
                             j.ToTable("UserRoles");
                         });
-
         });
     }
 }

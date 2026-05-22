@@ -10,9 +10,9 @@ namespace Web.Application.Auth.Commands
 {
     public record VerifyOTPAndRegisterCommand(
     string RegistrationId,
-    string Otp) : IRequest<Result<AuthResponse>>; // AuthResponse chứa Token
+    string Otp) : IRequest<Result<SpecialTokenResponse>>; // AuthResponse chứa Token
 
-    public class VerifyOTPAndRegisterCommandHandler : IRequestHandler<VerifyOTPAndRegisterCommand, Result<AuthResponse>>
+    public class VerifyOTPAndRegisterCommandHandler : IRequestHandler<VerifyOTPAndRegisterCommand, Result<SpecialTokenResponse>>
     {
         private readonly ICacheService _cacheService;
         private readonly IApplicationDbContext _context;
@@ -31,7 +31,7 @@ namespace Web.Application.Auth.Commands
             _tokenGenerator = tokenGenerator;
         }
 
-        public async Task<Result<AuthResponse>> Handle(VerifyOTPAndRegisterCommand request, CancellationToken cancellationToken)
+        public async Task<Result<SpecialTokenResponse>> Handle(VerifyOTPAndRegisterCommand request, CancellationToken cancellationToken)
         {
             // 1. Lấy dữ liệu tạm từ Cache bằng RegistrationId
             var cacheKey = $"reg_{request.RegistrationId}";
@@ -54,7 +54,6 @@ namespace Web.Application.Auth.Commands
             var user = User.Create(
                 pendingData.UserName,
                 pendingData.Email,
-                pendingData.FullName,
                 pendingData.PlainPassword,
                 _passwordHasher
             );
@@ -66,19 +65,17 @@ namespace Web.Application.Auth.Commands
             await _cacheService.RemoveAsync(cacheKey, cancellationToken);
 
             // 5. Generate JWT Token trả về cho Client
-            var token = _tokenGenerator.GenerateToken(user);
+            var specialToken = _tokenGenerator.GenerateToken(user, true);
 
-            var refreshToken = _tokenGenerator.GenerateRefreshToken();
+            //var refreshToken = _tokenGenerator.GenerateRefreshToken();
 
-            var response = new AuthResponse
+            var response = new SpecialTokenResponse
             {
-                AccessToken = token,
-                UserId = user.Id,
-                Email = user.Email,
-                RefreshToken = refreshToken
+                EmailToken = specialToken,
+                UserId = user.Id
             };
 
-            return Result<AuthResponse>.Success(response);
+            return Result<SpecialTokenResponse>.Success(response);
         }
     }
 }

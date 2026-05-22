@@ -2,6 +2,7 @@
 
 using System;
 using Web.Domain.Common;
+using Web.Domain.Primitives;
 using Web.Domain.Repository;
 
 public class User : BaseEntity
@@ -12,6 +13,7 @@ public class User : BaseEntity
     public string? PhoneNumber { get; private set; } // Thêm ? vì có thể không có SĐT
     public string? AvatarUrl { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public bool IsProfileCompleted => !string.IsNullOrWhiteSpace(FullName) && !string.IsNullOrWhiteSpace(Email);
 
     // Navigation property
     public ICollection<Role> Roles { get; private set; } = new List<Role>();
@@ -26,11 +28,11 @@ public class User : BaseEntity
 
     private User() { }
 
-    public static User Create(string username, string email, string fullName, string plainPassword, IPasswordHasher passwordHasher)
+    public static User Create(string username, string email, string plainPassword, IPasswordHasher passwordHasher)
     {
         if (string.IsNullOrWhiteSpace(plainPassword))
         {
-            throw new ArgumentException("Password cannot be empty.");
+            Error.Required("400", "Password cannot be empty.");
         }
 
         var user = new User
@@ -38,7 +40,6 @@ public class User : BaseEntity
             Id = Guid.NewGuid(),
             Username = username,
             Email = email,
-            FullName = fullName,
             IsActive = true
         };
 
@@ -58,6 +59,13 @@ public class User : BaseEntity
     {
         if (PasswordHash is null) return false;
         return passwordHasher.VerifyPassword(plainPassword, PasswordHash);
+    }
+
+    public void UpdateProfile(string fullName, string? phoneNumber, string? avatarUrl)
+    {
+        FullName = fullName;
+        PhoneNumber = phoneNumber;
+        AvatarUrl = avatarUrl;
     }
 
     // Hành vi: Đăng nhập thất bại

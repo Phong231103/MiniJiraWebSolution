@@ -6,7 +6,7 @@ using Web.Domain.Primitives;
 
 namespace Web.Application.Auth.Commands
 {
-    public record InitiateRegisterCommand(string Email, string Password, string FullName, string UserName) : IRequest<Result<string>>;
+    public record InitiateRegisterCommand(string Email, string Password, string UserName) : IRequest<Result<string>>;
 
     public class InitiateRegisterCommandHandler : IRequestHandler<InitiateRegisterCommand, Result<string>>
     {
@@ -42,7 +42,6 @@ namespace Web.Application.Auth.Commands
             {
                 Email = request.Email,
                 PlainPassword = request.Password,
-                FullName = request.FullName,
                 Otp = otp,
                 UserName = request.UserName
             };

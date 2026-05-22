@@ -52,13 +52,24 @@
             _value = value;
         }
 
+        private Result(T value, bool isSuccess, string msg)
+            : base(isSuccess, msg)
+        {
+            _value = value;
+            Massage = msg;
+        }
+
         // Chỉ được lấy Value khi IsSuccess = true, nếu không sẽ ném lỗi logic
         public T Value => IsSuccess
             ? _value!
             : throw new InvalidOperationException("Cannot access value of a failed result.");
 
+        public string Massage { get; set; }
+
         // Factory method tạo thành công kèm dữ liệu
         public static Result<T> Success(T value) => new Result<T>(value, true, Error.None);
+
+        public static Result<T> Success(T value, string msg) => new Result<T>(value, true, Error.None) { Massage = msg };
 
         // Factory method tạo thất bại (che dấu factory của base class)
         public new static Result<T> Failure(Error error) => new Result<T>(default!, false, error);

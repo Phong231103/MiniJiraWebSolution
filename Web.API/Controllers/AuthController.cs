@@ -26,12 +26,12 @@ namespace Web.API.Controllers
             return id.ToActionResult<string>(HttpContext);
         }
 
-        [HttpPost("verifyOtpAndRegister")]
-        [ProducesResponseType(typeof(ApiResponse<AuthResponse>), 200)]
+        [HttpPost("verifyOtp")]
+        [ProducesResponseType(typeof(ApiResponse<SpecialTokenResponse>), 200)]
         public async Task<IActionResult> VerifyOtpAndRegister([FromBody] VerifyOTPAndRegisterCommand command)
         {
             var authResponse = await _mediator.Send(command);
-            return authResponse.ToActionResult<AuthResponse>(HttpContext);
+            return authResponse.ToActionResult<SpecialTokenResponse>(HttpContext);
         }
     }
 }
