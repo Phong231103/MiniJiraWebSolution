@@ -1,81 +1,65 @@
 ﻿using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Web.Application.Auth.DTOs;
+using Web.Application.Auth.Enums;
 using Web.Application.Auth.Models;
 using Web.Application.Common.Interfaces;
-using Web.Domain.Entities;
 using Web.Domain.Primitives;
-using Web.Domain.Repository;
 
 namespace Web.Application.Auth.Commands
 {
-    public record RegisterCommand(
-    string RegistrationId,
-    string Otp) : IRequest<Result<ProvisionalTokenResponse>>; // AuthResponse chứa Token
+    public record RegisterCommand(RegisterRequest Request) : IRequest<Result<string>>;
 
-    public class VerifyOTPAndRegisterCommandHandler : IRequestHandler<RegisterCommand, Result<ProvisionalTokenResponse>>
+    public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<string>>
     {
-        private readonly ICacheService _cacheService;
         private readonly IApplicationDbContext _context;
-        private readonly IPasswordHasher _passwordHasher;
-        private readonly IJwtTokenGenerator _tokenGenerator;
+        private readonly ICacheService _cacheService;
+        private readonly IEmailService _emailService;
 
-        public VerifyOTPAndRegisterCommandHandler(
-            ICacheService cacheService,
-            IApplicationDbContext context,
-            IPasswordHasher passwordHasher,
-            IJwtTokenGenerator tokenGenerator)
+        public RegisterCommandHandler(IApplicationDbContext context, ICacheService cacheService, IEmailService emailService)
         {
-            _cacheService = cacheService;
             _context = context;
-            _passwordHasher = passwordHasher;
-            _tokenGenerator = tokenGenerator;
+            _cacheService = cacheService;
+            _emailService = emailService;
         }
 
-        public async Task<Result<ProvisionalTokenResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
-            // 1. Lấy dữ liệu tạm từ Cache bằng RegistrationId
-            var cacheKey = $"reg_{request.RegistrationId}";
+            // 1. Kiểm tra xem Email đã tồn tại trong DB chính thức chưa
+            var emailExists = await _context.Users.AnyAsync(u => u.Email == request.Request.Email, cancellationToken);
 
-            var pendingData = await _cacheService.GetAsync<PendingRegistration>(cacheKey, cancellationToken);
-
-            // Nếu không tìm thấy -> OTP hết hạn hoặc RegistrationId giả
-            if (pendingData is null)
+            if (emailExists)
             {
-                return Error.Validation("Auth.OtpExpired", "OTP has expired or registration session not found.");
+                return Error.Conflict("User.EmailExists", "This email is already registered.");
             }
 
-            // 2. Kiểm tra OTP
-            if (pendingData.Otp != request.Otp)
+            // 2. Tạo OTP (6 số ngẫu nhiên)
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            // 3. Tạo RegistrationId (Dùng Guid hoặc mã hóa Email)
+            var registrationId = Guid.NewGuid().ToString();
+
+            // 4. Lưu thông tin tạm vào Cache (Sống 5 phút)
+            var pendingData = new PendingRegistration
             {
-                return Error.Validation("Auth.InvalidOtp", "Invalid OTP.");
-            }
-
-            // 3. OTP hợp lệ! Tạo User Entity và lưu vào DB chính thức
-            var user = User.Create(
-                pendingData.UserName,
-                pendingData.Email,
-                pendingData.PlainPassword,
-                _passwordHasher
-            );
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // 4. Dọn dẹp Cache (Để không thể dùng lại OTP)
-            await _cacheService.RemoveAsync(cacheKey, cancellationToken);
-
-            // 5. Generate JWT Token trả về cho Client
-            var specialToken = _tokenGenerator.GenerateToken(user, true);
-
-            //var refreshToken = _tokenGenerator.GenerateRefreshToken();
-
-            var response = new ProvisionalTokenResponse
-            {
-                EmailToken = specialToken,
-                UserId = user.Id
+                Email = request.Request.Email,
+                FullName = request.Request.FullName,
+                Username = request.Request.Username, // Có thể dùng email làm username tạm
+                PhoneNumber = request.Request.PhoneNumber,
+                Plainpassword = request.Request.Plainpassword,
+                Otp = otp,
+                OtpType = (int)OtpCodeType.FirstTimeRegistration
             };
 
-            return Result<ProvisionalTokenResponse>.Success(response, "Validate OTP Success");
+            var cacheKey = $"reg_{registrationId}";
+
+            await _cacheService.SetAsync(cacheKey, pendingData, TimeSpan.FromMinutes(5), cancellationToken);
+
+            // 5. Gửi OTP qua Email
+            await _emailService.SendOtpAsync(request.Request.Email, otp);
+
+            // 6. Trả về RegistrationId cho Client để bước sau dùng
+            return Result<string>.Success(registrationId);
         }
     }
 }
