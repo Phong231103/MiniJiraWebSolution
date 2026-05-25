@@ -15,28 +15,14 @@
             Type = type;
         }
 
-        // Các factory method tĩnh để tạo lỗi cho dễ đọc
-        public static Error NotFound(string code, string message) =>
-            new Error(code, message, ErrorType.NotFound);
+        public static Error NotFound(string code, string message) => new(code, message, ErrorType.NotFound);
+        public static Error Validation(string code, string message) => new(code, message, ErrorType.Validation);
+        public static Error Conflict(string code, string message) => new(code, message, ErrorType.Conflict);
+        public static Error Unauthorized(string code, string message) => new(code, message, ErrorType.Unauthorized);
+        public static Error Required(string code, string message) => new(code, message, ErrorType.Required);
+        public static Error Exist(string code, string message) => new(code, message, ErrorType.Exist);
+        public static Error Fail(string code, string message) => new(code, message, ErrorType.Failure);
 
-        public static Error Validation(string code, string message) =>
-            new Error(code, message, ErrorType.Validation);
-
-        public static Error Conflict(string code, string message) =>
-            new Error(code, message, ErrorType.Conflict);
-
-        public static Error Unauthorized(string code, string message) =>
-            new Error(code, message, ErrorType.Unauthorized);
-
-        public static Error Required(string code, string message) =>
-            new Error(code, message, ErrorType.Required);
-
-        public static Error Exist(string code, string message) =>
-            new Error(code, message, ErrorType.Exist);
-        public static Error Fail(string code, string message) =>
-            new Error(code, message, ErrorType.Failure);
-
-        // Đại diện cho trạng thái không có lỗi (Rất quan trọng cho Result)
-        public static readonly Error None = new Error(string.Empty, string.Empty, ErrorType.Failure);
+        public static readonly Error None = new(string.Empty, string.Empty, ErrorType.Failure);
     }
 }

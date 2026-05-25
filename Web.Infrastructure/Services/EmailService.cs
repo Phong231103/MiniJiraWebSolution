@@ -27,7 +27,7 @@ namespace Web.Infrastructure.Services
             _emailSettings = emailSettings.Value;
         }
 
-        public async Task<Result> SendOtpAsync(string toEmail, string otp, CancellationToken cancellationToken = default)
+        public async Task<Result<bool>> SendOtpAsync(string toEmail, string otp, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -66,7 +66,7 @@ namespace Web.Infrastructure.Services
                 await smtp.SendAsync(email, cancellationToken);
                 await smtp.DisconnectAsync(true, cancellationToken);
 
-                return Result.Success("OTP email sent successfully");
+                return Result<bool>.Success(true, "OTP email sent successfully");
             }
             catch (Exception ex)
             {

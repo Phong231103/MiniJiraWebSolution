@@ -10,20 +10,21 @@ public class User : BaseEntity
     public string Username { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
     public string FullName { get; private set; } = string.Empty;
-    public string? PhoneNumber { get; private set; } // Thêm ? vì có thể không có SĐT
+    public string? PhoneNumber { get; private set; }
     public string? AvatarUrl { get; private set; }
     public bool IsActive { get; private set; } = true;
-    public bool IsProfileCompleted => !string.IsNullOrWhiteSpace(FullName) && !string.IsNullOrWhiteSpace(Email);
+    public bool IsProfileCompleted => !string.IsNullOrWhiteSpace(FullName) && (IsActive = true);
 
     // Navigation property
     public ICollection<Role> Roles { get; private set; } = new List<Role>();
     public ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
 
     // --- Các thuộc tính bảo mật ---
-    public string? PasswordHash { get; private set; } // Có thể null nếu user chưa set pass
-    public DateTime RefreshTokenExpiry { get; private set; }
+    public string? PasswordHash { get; private set; }
     public int FailedLoginAttempts { get; private set; }
     public DateTime? LockoutEnd { get; private set; }
+    public int LockoutCount { get; private set; } = 0;
+    public bool IsLockedOut => LockoutEnd.HasValue && LockoutEnd > DateTime.UtcNow;
 
 
     private User() { }
@@ -39,8 +40,7 @@ public class User : BaseEntity
         {
             Id = Guid.NewGuid(),
             Username = username,
-            Email = email,
-            IsActive = true
+            Email = email
         };
 
         // Tự băm và gán mật khẩu ngay khi tạo
@@ -57,7 +57,11 @@ public class User : BaseEntity
     // Hành vi: Xác thực mật khẩu
     public bool ValidatePassword(string plainPassword, IPasswordHasher passwordHasher)
     {
-        if (PasswordHash is null) return false;
+        if (PasswordHash is null)
+        {
+            return false;
+        }
+
         return passwordHasher.VerifyPassword(plainPassword, PasswordHash);
     }
 
@@ -66,15 +70,25 @@ public class User : BaseEntity
         FullName = fullName;
         PhoneNumber = phoneNumber;
         AvatarUrl = avatarUrl;
+        IsActive = true;
     }
 
     // Hành vi: Đăng nhập thất bại
-    public void RecordFailedLogin()
+    public void RecordFailedLogin(int maxAttempts = 5)
     {
         FailedLoginAttempts++;
-        if (FailedLoginAttempts >= 5) // Khóa tài khoản sau 5 lần
+
+        if (FailedLoginAttempts >= maxAttempts)
         {
-            LockoutEnd = DateTime.UtcNow.AddMinutes(15);
+            // Lockout tăng dần (Exponential Backoff)
+            int lockMinutes = Math.Min(15 * (int)Math.Pow(2, LockoutCount), 1440); // max 24h
+            LockoutEnd = DateTime.UtcNow.AddMinutes(lockMinutes);
+            LockoutCount++;
+        }
+
+        if (LockoutCount == 3)
+        {
+            IsActive = false; // Vô hiệu hóa tài khoản sau 3 lần lockout
         }
     }
 

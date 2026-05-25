@@ -8,11 +8,11 @@ using Web.Domain.Repository;
 
 namespace Web.Application.Auth.Commands
 {
-    public record VerifyOTPAndRegisterCommand(
+    public record RegisterCommand(
     string RegistrationId,
-    string Otp) : IRequest<Result<SpecialTokenResponse>>; // AuthResponse chứa Token
+    string Otp) : IRequest<Result<ProvisionalTokenResponse>>; // AuthResponse chứa Token
 
-    public class VerifyOTPAndRegisterCommandHandler : IRequestHandler<VerifyOTPAndRegisterCommand, Result<SpecialTokenResponse>>
+    public class VerifyOTPAndRegisterCommandHandler : IRequestHandler<RegisterCommand, Result<ProvisionalTokenResponse>>
     {
         private readonly ICacheService _cacheService;
         private readonly IApplicationDbContext _context;
@@ -31,7 +31,7 @@ namespace Web.Application.Auth.Commands
             _tokenGenerator = tokenGenerator;
         }
 
-        public async Task<Result<SpecialTokenResponse>> Handle(VerifyOTPAndRegisterCommand request, CancellationToken cancellationToken)
+        public async Task<Result<ProvisionalTokenResponse>> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
             // 1. Lấy dữ liệu tạm từ Cache bằng RegistrationId
             var cacheKey = $"reg_{request.RegistrationId}";
@@ -59,7 +59,7 @@ namespace Web.Application.Auth.Commands
             );
 
             _context.Users.Add(user);
-            await _context.SaveChangesAsync(cancellationToken); // Lúc này User mới có Id
+            await _context.SaveChangesAsync(cancellationToken);
 
             // 4. Dọn dẹp Cache (Để không thể dùng lại OTP)
             await _cacheService.RemoveAsync(cacheKey, cancellationToken);
@@ -69,13 +69,13 @@ namespace Web.Application.Auth.Commands
 
             //var refreshToken = _tokenGenerator.GenerateRefreshToken();
 
-            var response = new SpecialTokenResponse
+            var response = new ProvisionalTokenResponse
             {
                 EmailToken = specialToken,
                 UserId = user.Id
             };
 
-            return Result<SpecialTokenResponse>.Success(response);
+            return Result<ProvisionalTokenResponse>.Success(response, "Validate OTP Success");
         }
     }
 }

@@ -2,13 +2,14 @@
 {
     public class Result
     {
+        // Bỏ hàm tạo protected thứ 2, chỉ giữ 1 hàm tạo chuẩn mực
         protected Result(bool isSuccess, Error error)
         {
-            // Quy tắc: Nếu thành công thì Error phải là None. Nếu thất bại thì Error phải khác None.
             if (isSuccess && error != Error.None)
             {
                 throw new InvalidOperationException("Successful result cannot have an error.");
             }
+
             if (!isSuccess && error == Error.None)
             {
                 throw new InvalidOperationException("Failed result must have an error.");
@@ -18,27 +19,16 @@
             Error = error;
         }
 
-        protected Result(bool isSuccess, string msg)
-        {
-            Massage = msg;
-            IsSuccess = isSuccess;
-        }
-
         public bool IsSuccess { get; }
         public bool IsFailure => !IsSuccess;
-        public string Massage { get; set; }
         public Error Error { get; }
 
-        // Factory method tạo thành công
-        public static Result Success() => new Result(true, Error.None);
+        // Factory methods
+        public static Result Success() => new(true, Error.None);
 
-        public static Result Success(string msg) => new Result(true, msg);
+        public static Result Failure(Error error) => new(false, error);
 
-        // Factory method tạo thất bại
-        public static Result Failure(Error error) => new Result(false, error);
-
-        // Implicit operator: Cho phép viết tắt từ Error sang Result
-        // Ví dụ: return Error.NotFound(...); compiler sẽ tự wrap thành Result.Failure(...)
+        // Implicit operators
         public static implicit operator Result(Error error) => Failure(error);
     }
 
@@ -46,20 +36,11 @@
     {
         private readonly T? _value;
 
-        private Result(T value, bool isSuccess, Error error)
-            : base(isSuccess, error)
+        private Result(T value, bool isSuccess, Error error) : base(isSuccess, error)
         {
             _value = value;
         }
 
-        private Result(T value, bool isSuccess, string msg)
-            : base(isSuccess, msg)
-        {
-            _value = value;
-            Massage = msg;
-        }
-
-        // Chỉ được lấy Value khi IsSuccess = true, nếu không sẽ ném lỗi logic
         public T Value => IsSuccess
             ? _value!
             : throw new InvalidOperationException("Cannot access value of a failed result.");

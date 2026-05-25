@@ -42,6 +42,8 @@ namespace Web.Infrastructure.Services
                 claims.Add(new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()));
                 claims.Add(new Claim(JwtRegisteredClaimNames.Name, user.FullName));
                 claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
+                claims.Add(new Claim("ProfileCompleted", "true"));
+                claims.Add(new Claim("TokenType", "FullyAcess"));
 
                 // Thêm Roles vào claims (Nếu User có Roles)
                 // Lưu ý: ClaimTypes.Role giúp .NET tự động map với [Authorize(Roles = "Admin")]
@@ -52,6 +54,11 @@ namespace Web.Infrastructure.Services
                         claims.Add(new Claim(ClaimTypes.Role, role.DisplayName));
                     }
                 }
+            }
+            else
+            {
+                claims.Add(new Claim("ProfileCompleted", "false"));
+                claims.Add(new Claim("TokenType", "Provisional"));
             }
 
             // 3. Tạo cấu trúc Token

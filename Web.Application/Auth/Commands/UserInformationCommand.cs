@@ -56,7 +56,7 @@ namespace Web.Application.Auth.Commands
                 UserId = user.Id
             };
 
-            return Result<AuthResponse>.Success(response, "");
+            return Result<AuthResponse>.Success(response, "Finish update personal information. Welcome");
         }
     }
 }

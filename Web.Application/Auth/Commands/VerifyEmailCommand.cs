@@ -6,9 +6,9 @@ using Web.Domain.Primitives;
 
 namespace Web.Application.Auth.Commands
 {
-    public record InitiateRegisterCommand(string Email, string Password, string UserName) : IRequest<Result<string>>;
+    public record VerifyEmailCommand(string Email) : IRequest<Result<string>>;
 
-    public class InitiateRegisterCommandHandler : IRequestHandler<InitiateRegisterCommand, Result<string>>
+    public class InitiateRegisterCommandHandler : IRequestHandler<VerifyEmailCommand, Result<string>>
     {
         private readonly IApplicationDbContext _context;
         private readonly ICacheService _cacheService;
@@ -21,7 +21,7 @@ namespace Web.Application.Auth.Commands
             _emailService = emailService;
         }
 
-        public async Task<Result<string>> Handle(InitiateRegisterCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
         {
             // 1. Kiểm tra xem Email đã tồn tại trong DB chính thức chưa
             var emailExists = await _context.Users.AnyAsync(u => u.Email == request.Email, cancellationToken);
@@ -41,9 +41,7 @@ namespace Web.Application.Auth.Commands
             var pendingData = new PendingRegistration
             {
                 Email = request.Email,
-                PlainPassword = request.Password,
-                Otp = otp,
-                UserName = request.UserName
+                Otp = otp
             };
 
             var cacheKey = $"reg_{registrationId}";

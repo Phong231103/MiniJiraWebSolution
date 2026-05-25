@@ -20,18 +20,18 @@ namespace Web.API.Controllers
 
         [HttpPost("firstTimeRegistration")]
         [ProducesResponseType(typeof(ApiResponse<string>), 200)]
-        public async Task<IActionResult> Register([FromBody] InitiateRegisterCommand command, CancellationToken cancellationToken)
+        public async Task<IActionResult> Register([FromBody] VerifyEmailCommand command, CancellationToken cancellationToken)
         {
             var id = await _mediator.Send(command, cancellationToken);
             return id.ToActionResult<string>(HttpContext);
         }
 
         [HttpPost("verifyOtp")]
-        [ProducesResponseType(typeof(ApiResponse<SpecialTokenResponse>), 200)]
-        public async Task<IActionResult> VerifyOtpAndRegister([FromBody] VerifyOTPAndRegisterCommand command)
+        [ProducesResponseType(typeof(ApiResponse<ProvisionalTokenResponse>), 200)]
+        public async Task<IActionResult> VerifyOtpAndRegister([FromBody] RegisterCommand command)
         {
             var authResponse = await _mediator.Send(command);
-            return authResponse.ToActionResult<SpecialTokenResponse>(HttpContext);
+            return authResponse.ToActionResult<ProvisionalTokenResponse>(HttpContext);
         }
     }
 }
