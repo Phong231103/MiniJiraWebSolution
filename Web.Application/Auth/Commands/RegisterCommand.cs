@@ -48,10 +48,11 @@ namespace Web.Application.Auth.Commands
                 PhoneNumber = request.Request.PhoneNumber,
                 Plainpassword = request.Request.Plainpassword,
                 Otp = otp,
-                OtpType = (int)OtpCodeType.FirstTimeRegistration
+                OtpType = (int)OtpCodeType.FirstTimeRegistration,
+                OtpFaildeAttemp = 0
             };
 
-            var cacheKey = $"reg_{registrationId}";
+            var cacheKey = $"otp_{pendingData.OtpType}_{registrationId}";
 
             await _cacheService.SetAsync(cacheKey, pendingData, TimeSpan.FromMinutes(5), cancellationToken);
 

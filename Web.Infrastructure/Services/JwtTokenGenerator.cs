@@ -27,7 +27,7 @@ namespace Web.Infrastructure.Services
             _jwtSettings = jwtSettings.Value;
         }
 
-        public string GenerateToken(User user, bool isEmailToken)
+        public string GenerateToken(User user)
         {
             // 1. Tạo Signing Key từ chuỗi Secret
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
@@ -36,29 +36,18 @@ namespace Web.Infrastructure.Services
             // 2. Định nghĩa các Claims (Thông tin đính kèm trong Token)
 
             var claims = new List<Claim> { new Claim(JwtRegisteredClaimNames.Email, user.Email) };
+            claims.Add(new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()));
+            claims.Add(new Claim(JwtRegisteredClaimNames.Name, user.FullName));
+            claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
 
-            if (!isEmailToken)
+            // Thêm Roles vào claims (Nếu User có Roles)
+            // Lưu ý: ClaimTypes.Role giúp .NET tự động map với [Authorize(Roles = "Admin")]
+            if (user.Roles != null)
             {
-                claims.Add(new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()));
-                claims.Add(new Claim(JwtRegisteredClaimNames.Name, user.FullName));
-                claims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
-                claims.Add(new Claim("ProfileCompleted", "true"));
-                claims.Add(new Claim("TokenType", "FullyAcess"));
-
-                // Thêm Roles vào claims (Nếu User có Roles)
-                // Lưu ý: ClaimTypes.Role giúp .NET tự động map với [Authorize(Roles = "Admin")]
-                if (user.Roles != null)
+                foreach (var role in user.Roles)
                 {
-                    foreach (var role in user.Roles)
-                    {
-                        claims.Add(new Claim(ClaimTypes.Role, role.DisplayName));
-                    }
+                    claims.Add(new Claim(ClaimTypes.Role, role.DisplayName));
                 }
-            }
-            else
-            {
-                claims.Add(new Claim("ProfileCompleted", "false"));
-                claims.Add(new Claim("TokenType", "Provisional"));
             }
 
             // 3. Tạo cấu trúc Token

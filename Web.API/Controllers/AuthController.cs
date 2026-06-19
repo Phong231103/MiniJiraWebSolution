@@ -20,7 +20,7 @@ namespace Web.API.Controllers
 
         [HttpPost("firstTimeRegistration")]
         [ProducesResponseType(typeof(ApiResponse<string>), 200)]
-        public async Task<IActionResult> Register([FromBody] VerifyEmailCommand command, CancellationToken cancellationToken)
+        public async Task<IActionResult> Register([FromBody] RegisterCommand command, CancellationToken cancellationToken)
         {
             var id = await _mediator.Send(command, cancellationToken);
             return id.ToActionResult<string>(HttpContext);

@@ -16,6 +16,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Attachment> Attachments => Set<Attachment>();
     public DbSet<Role> Roles => Set<Role>();
 
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<Device> Devices => Set<Device>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -122,6 +125,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
             entity.HasIndex(u => u.Username).IsUnique();
             entity.HasIndex(u => u.Email).IsUnique();
+
+            entity.HasMany(u => u.Devices)
+                  .WithOne(d => d.User)
+                  .HasForeignKey(d => d.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(u => u.RefreshTokens)
                   .WithOne(rt => rt.User)

@@ -18,6 +18,7 @@ public class User : BaseEntity
     // Navigation property
     public ICollection<Role> Roles { get; private set; } = new List<Role>();
     public ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
+    public ICollection<Device> Devices { get; private set; } = new List<Device>();
 
     // --- Các thuộc tính bảo mật ---
     public string? PasswordHash { get; private set; }
@@ -48,13 +49,13 @@ public class User : BaseEntity
         return user;
     }
 
-    // Hành vi: Đặt mật khẩu
+    // Đặt mật khẩu
     public void SetPassword(string plainPassword, IPasswordHasher passwordHasher)
     {
         PasswordHash = passwordHasher.HashPassword(plainPassword);
     }
 
-    // Hành vi: Xác thực mật khẩu
+    // Xác thực mật khẩu
     public bool ValidatePassword(string plainPassword, IPasswordHasher passwordHasher)
     {
         if (PasswordHash is null)
@@ -73,7 +74,7 @@ public class User : BaseEntity
         IsActive = true;
     }
 
-    // Hành vi: Đăng nhập thất bại
+    // Đăng nhập thất bại
     public void RecordFailedLogin(int maxAttempts = 5)
     {
         FailedLoginAttempts++;
@@ -92,21 +93,21 @@ public class User : BaseEntity
         }
     }
 
-    // Hành vi: Reset số lần đăng nhập thất bại
+    // Reset số lần đăng nhập thất bại
     public void ResetLoginAttempts()
     {
         FailedLoginAttempts = 0;
         LockoutEnd = null;
     }
 
-    // Hành vi: Thêm Refresh Token mới
+    // Thêm Refresh Token mới
     public void AddRefreshToken(string token, DateTime expires)
     {
         var refreshToken = RefreshToken.Create(Id, token, expires);
         RefreshTokens.Add(refreshToken);
     }
 
-    // Hành vi: Thu hồi Refresh Token cũ (Dùng trong luồng Rotation)
+    // Thu hồi Refresh Token cũ (Dùng trong luồng Rotation)
     public void RevokeRefreshToken(string token)
     {
         var existingToken = RefreshTokens.FirstOrDefault(t => t.Token == token);

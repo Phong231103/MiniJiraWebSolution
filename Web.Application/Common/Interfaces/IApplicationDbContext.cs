@@ -14,6 +14,8 @@ public interface IApplicationDbContext
     DbSet<Comment> Comments { get; }
     DbSet<Attachment> Attachments { get; }
     DbSet<Role> Roles { get; }
+    DbSet<Permission> Permissions { get; }
+    DbSet<Device> Devices { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
 }
