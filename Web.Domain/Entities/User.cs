@@ -101,9 +101,9 @@ public class User : BaseEntity
     }
 
     // Thêm Refresh Token mới
-    public void AddRefreshToken(string token, DateTime expires)
+    public void AddRefreshToken(Guid deviceId, string token, DateTime expires)
     {
-        var refreshToken = RefreshToken.Create(Id, token, expires);
+        var refreshToken = RefreshToken.Create(Id, deviceId, token, expires);
         RefreshTokens.Add(refreshToken);
     }
 

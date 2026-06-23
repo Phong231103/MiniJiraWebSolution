@@ -1,60 +1,186 @@
-﻿using Web.Domain.Repository;
-
-namespace Web.Domain.Entities
+﻿namespace Web.Domain.Entities
 {
     public class Device
     {
-        public Guid Id { get; set; }
+        private readonly List<RefreshToken> _refreshTokens = [];
 
-        public Guid UserId { get; set; }
-
-        // Có thể hash từ chuỗi UserAgent + OS + DeviceName
-        public string DeviceFingerprint { get; set; } = string.Empty;
-
-        public string? DeviceName { get; set; }
-
-        // Đối tượng chứa thông tin chi tiết của thiết bị (IP, OS, Browser...)
-        public string? DeviceInfoJson { get; set; }
-
-        public string? RefreshToken { get; set; }
-
-        public DateTime? RefreshTokenExpiryTime { get; set; }
-
-        // Trạng thái phiên đăng nhập hiện tại
-        public bool IsActive { get; set; } = true;
-
-        // Ghi nhớ thiết bị
-        public bool IsTrusted { get; set; } = false;
-
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-
-        public DateTime? LastLogin { get; set; }
-
-        // Navigation property (nếu dùng EF Core)
-        public virtual User? User { get; set; }
-
-        public static Device Create(string username, string email, string plainPassword, IPasswordHasher passwordHasher)
+        private Device()
         {
-            var device = new Device
-            {
-                Id = Guid.NewGuid(),
-                Username = username,
-                Email = email
-            };
-
-            // Tự băm và gán mật khẩu ngay khi tạo
-            user.SetPassword(plainPassword, passwordHasher);
-            return user;
         }
 
+        public Guid Id { get; private set; }
+
+        public Guid UserId { get; private set; }
+
+        /// <summary>
+        /// FingerprintJS VisitorId
+        /// Unique theo (UserId, Fingerprint)
+        /// </summary>
+        public string Fingerprint { get; private set; } = string.Empty;
+
+        public string Browser { get; private set; } = string.Empty;
+
+        public string OperatingSystem { get; private set; } = string.Empty;
+
+        public string UserAgent { get; private set; } = string.Empty;
+
+        public string? LastIpAddress { get; private set; }
+
+        public string? Timezone { get; private set; }
+
+        public string? Language { get; private set; }
+
+        public string? DeviceName { get; private set; }
+
+        /// <summary>
+        /// Còn phiên đăng nhập hợp lệ hay không
+        /// </summary>
+        public bool IsActive { get; private set; }
+
+        /// <summary>
+        /// Người dùng đã đánh dấu tin cậy
+        /// </summary>
+        public bool IsTrusted { get; private set; }
+
+        public DateTime CreatedDate { get; private set; }
+
+        public DateTime? LastLogin { get; private set; }
+
+        public virtual User? User { get; private set; }
+
+        public IReadOnlyCollection<RefreshToken> RefreshTokens
+            => _refreshTokens.AsReadOnly();
+
+        #region Factory
+
+        public static Device Create(
+            Guid userId,
+            string fingerprint,
+            string browser,
+            string operatingSystem,
+            string userAgent,
+            string? ipAddress,
+            string? timezone,
+            string? language,
+            string? deviceName = null)
+        {
+            return new Device
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Fingerprint = fingerprint,
+                Browser = browser,
+                OperatingSystem = operatingSystem,
+                UserAgent = userAgent,
+                LastIpAddress = ipAddress,
+                Timezone = timezone,
+                Language = language,
+                DeviceName = string.IsNullOrWhiteSpace(deviceName)
+                    ? $"{browser} on {operatingSystem}"
+                    : deviceName,
+                IsActive = true,
+                IsTrusted = false,
+                CreatedDate = DateTime.UtcNow,
+                LastLogin = DateTime.UtcNow
+            };
+        }
+
+        #endregion
+
+        #region Login
+
+        public void Login(
+            string? ipAddress,
+            string? timezone,
+            string? language)
+        {
+            LastLogin = DateTime.UtcNow;
+            LastIpAddress = ipAddress;
+            Timezone = timezone;
+            Language = language;
+            IsActive = true;
+        }
+
+        #endregion
+
+        #region Device Info
+
+        public void UpdateDeviceInfo(
+            string browser,
+            string operatingSystem,
+            string userAgent)
+        {
+            Browser = browser;
+            OperatingSystem = operatingSystem;
+            UserAgent = userAgent;
+        }
+
+        public void Rename(string deviceName)
+        {
+            if (string.IsNullOrWhiteSpace(deviceName))
+            {
+                throw new ArgumentException(
+                    "Device name cannot be empty.");
+            }
+
+            DeviceName = deviceName.Trim();
+        }
+
+        #endregion
+
+        #region Trust
+
+        public void MarkAsTrusted()
+        {
+            IsTrusted = true;
+        }
+
+        public void RemoveTrust()
+        {
+            IsTrusted = false;
+        }
+
+        #endregion
+
+        #region Session
+
+        public void Activate()
+        {
+            IsActive = true;
+        }
+
+        public void Deactivate()
+        {
+            IsActive = false;
+        }
+
+        #endregion
+
+        #region Refresh Token
+
+        public void AddRefreshToken(
+            RefreshToken refreshToken)
+        {
+            _refreshTokens.Add(refreshToken);
+        }
+
+        #endregion
     }
 
-    // Lớp mô tả thông tin thiết bị (dùng trong code, trước khi lưu thành JSON)
     public class DeviceInfo
     {
         public string? IPAddress { get; set; }
+
         public string? OperatingSystem { get; set; }
+
         public string? Browser { get; set; }
+
         public string? UserAgent { get; set; }
+
+        public string? DeviceName { get; set; }
+
+        public string? Country { get; set; }
+
+        public string? City { get; set; }
     }
 }

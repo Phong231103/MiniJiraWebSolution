@@ -8,21 +8,23 @@
         public DateTime Expires { get; private set; }
         public bool IsRevoked { get; private set; }
         public DateTime Created { get; private set; }
-        public string? ReplacedByToken { get; private set; }
 
         // Khóa ngoại
         public Guid UserId { get; private set; }
+        public Guid DeviceId { get; private set; }
         public User User { get; private set; } = null!;
+        public Device Device { get; private set; } = default!;
 
         // Constructor cho EF Core
         private RefreshToken() { }
 
         // Factory method để tạo Refresh Token mới
-        public static RefreshToken Create(Guid userId, string token, DateTime expires)
+        public static RefreshToken Create(Guid userId, Guid deviceId, string token, DateTime expires)
         {
             return new RefreshToken
             {
                 Id = Guid.NewGuid(),
+                DeviceId = deviceId,
                 UserId = userId,
                 Token = token,
                 Expires = expires,
