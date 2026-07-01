@@ -99,21 +99,4 @@ public class User : BaseEntity
         FailedLoginAttempts = 0;
         LockoutEnd = null;
     }
-
-    // Thêm Refresh Token mới
-    public void AddRefreshToken(Guid deviceId, string token, DateTime expires)
-    {
-        var refreshToken = RefreshToken.Create(Id, deviceId, token, expires);
-        RefreshTokens.Add(refreshToken);
-    }
-
-    // Thu hồi Refresh Token cũ (Dùng trong luồng Rotation)
-    public void RevokeRefreshToken(string token)
-    {
-        var existingToken = RefreshTokens.FirstOrDefault(t => t.Token == token);
-        if (existingToken != null && existingToken.IsActive)
-        {
-            existingToken.Revoke();
-        }
-    }
 }

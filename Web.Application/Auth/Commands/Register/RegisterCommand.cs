@@ -1,30 +1,32 @@
 ﻿using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Web.Application.Auth.Enums;
 using Web.Application.Auth.Models;
+using Web.Application.Auth.Request;
 using Web.Application.Common.Interfaces;
 using Web.Domain.Primitives;
 
-namespace Web.Application.Auth.Commands
+namespace Web.Application.Auth.Commands.Register
 {
-    public record VerifyEmailCommand(string Email) : IRequest<Result<string>>;
+    public record RegisterCommand(RegisterRequest Request) : IRequest<Result<string>>;
 
-    public class InitiateRegisterCommandHandler : IRequestHandler<VerifyEmailCommand, Result<string>>
+    public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<string>>
     {
         private readonly IApplicationDbContext _context;
         private readonly ICacheService _cacheService;
         private readonly IEmailService _emailService;
 
-        public InitiateRegisterCommandHandler(IApplicationDbContext context, ICacheService cacheService, IEmailService emailService)
+        public RegisterCommandHandler(IApplicationDbContext context, ICacheService cacheService, IEmailService emailService)
         {
             _context = context;
             _cacheService = cacheService;
             _emailService = emailService;
         }
 
-        public async Task<Result<string>> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
+        public async Task<Result<string>> Handle(RegisterCommand request, CancellationToken cancellationToken)
         {
             // 1. Kiểm tra xem Email đã tồn tại trong DB chính thức chưa
-            var emailExists = await _context.Users.AnyAsync(u => u.Email == request.Email, cancellationToken);
+            var emailExists = await _context.Users.AnyAsync(u => u.Email == request.Request.Email, cancellationToken);
 
             if (emailExists)
             {
@@ -40,16 +42,22 @@ namespace Web.Application.Auth.Commands
             // 4. Lưu thông tin tạm vào Cache (Sống 5 phút)
             var pendingData = new PendingRegistration
             {
-                Email = request.Email,
-                Otp = otp
+                Email = request.Request.Email,
+                FullName = request.Request.FullName,
+                Username = request.Request.Username, // Có thể dùng email làm username tạm
+                PhoneNumber = request.Request.PhoneNumber,
+                Plainpassword = request.Request.Plainpassword,
+                Otp = otp,
+                OtpType = (int)OtpCodeType.FirstTimeRegistration,
+                OtpFaildeAttemp = 0
             };
 
-            var cacheKey = $"reg_{registrationId}";
+            var cacheKey = $"otp_{pendingData.OtpType}_{registrationId}";
 
             await _cacheService.SetAsync(cacheKey, pendingData, TimeSpan.FromMinutes(5), cancellationToken);
 
             // 5. Gửi OTP qua Email
-            await _emailService.SendOtpAsync(request.Email, otp);
+            await _emailService.SendOtpAsync(request.Request.Email, otp);
 
             // 6. Trả về RegistrationId cho Client để bước sau dùng
             return Result<string>.Success(registrationId);

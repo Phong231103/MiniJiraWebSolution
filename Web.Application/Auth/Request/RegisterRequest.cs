@@ -1,4 +1,4 @@
-﻿namespace Web.Application.Auth.Models
+﻿namespace Web.Application.Auth.Request
 {
     public class RegisterRequest
     {

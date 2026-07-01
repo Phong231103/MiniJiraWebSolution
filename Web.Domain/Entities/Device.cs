@@ -4,6 +4,8 @@
     {
         private readonly List<RefreshToken> _refreshTokens = [];
 
+        public sealed record DeviceMetadata(string Browser, string OperatingSystem, string UserAgent, string? Fingerprint, string? IpAddress, string? Timezone);
+
         private Device()
         {
         }
@@ -12,11 +14,7 @@
 
         public Guid UserId { get; private set; }
 
-        /// <summary>
-        /// FingerprintJS VisitorId
-        /// Unique theo (UserId, Fingerprint)
-        /// </summary>
-        public string Fingerprint { get; private set; } = string.Empty;
+        public string? Fingerprint { get; private set; }
 
         public string Browser { get; private set; } = string.Empty;
 
@@ -28,14 +26,7 @@
 
         public string? Timezone { get; private set; }
 
-        public string? Language { get; private set; }
-
         public string? DeviceName { get; private set; }
-
-        /// <summary>
-        /// Còn phiên đăng nhập hợp lệ hay không
-        /// </summary>
-        public bool IsActive { get; private set; }
 
         /// <summary>
         /// Người dùng đã đánh dấu tin cậy
@@ -44,7 +35,17 @@
 
         public DateTime CreatedDate { get; private set; }
 
-        public DateTime? LastLogin { get; private set; }
+        public DateTime LastSeen { get; private set; }
+
+        public DateTime LastLogin { get; private set; }
+
+        public DateTime UpdatedDate { get; private set; }
+
+        public DateTime? RevokedAt { get; private set; }
+
+        public string? RevokedReason { get; private set; }
+
+        public string DeviceIdentifier { get; private set; }
 
         public virtual User? User { get; private set; }
 
@@ -55,50 +56,58 @@
 
         public static Device Create(
             Guid userId,
+            string deviceIdentifier,
             string fingerprint,
             string browser,
             string operatingSystem,
             string userAgent,
             string? ipAddress,
             string? timezone,
-            string? language,
-            string? deviceName = null)
-        {
-            return new Device
+            string? deviceName = null) => new Device
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
+                DeviceIdentifier = deviceIdentifier,
                 Fingerprint = fingerprint,
                 Browser = browser,
                 OperatingSystem = operatingSystem,
                 UserAgent = userAgent,
                 LastIpAddress = ipAddress,
                 Timezone = timezone,
-                Language = language,
-                DeviceName = string.IsNullOrWhiteSpace(deviceName)
-                    ? $"{browser} on {operatingSystem}"
-                    : deviceName,
-                IsActive = true,
-                IsTrusted = false,
+                DeviceName = deviceName ?? $"{browser} on {operatingSystem}",
+
                 CreatedDate = DateTime.UtcNow,
-                LastLogin = DateTime.UtcNow
+                UpdatedDate = DateTime.UtcNow,
+                LastLogin = DateTime.UtcNow,
+                LastSeen = DateTime.UtcNow,
+
+                IsTrusted = false,
+
             };
-        }
 
         #endregion
 
-        #region Login
+        #region Authentication
 
-        public void Login(
-            string? ipAddress,
-            string? timezone,
-            string? language)
+        public void Login(DeviceMetadata deviceMetadata)
         {
+            Browser = deviceMetadata.Browser;
+            OperatingSystem = deviceMetadata.OperatingSystem;
+            UserAgent = deviceMetadata.UserAgent;
+            Fingerprint = deviceMetadata.Fingerprint;
+            LastIpAddress = deviceMetadata.IpAddress;
+            Timezone = deviceMetadata.Timezone;
+
             LastLogin = DateTime.UtcNow;
+            LastSeen = DateTime.UtcNow;
+            UpdatedDate = DateTime.UtcNow;
+        }
+
+        public void CheckOnActiveDevice(string? ipAddress)
+        {
+            LastSeen = DateTime.UtcNow;
             LastIpAddress = ipAddress;
-            Timezone = timezone;
-            Language = language;
-            IsActive = true;
+            UpdatedDate = DateTime.UtcNow;
         }
 
         #endregion
@@ -113,6 +122,12 @@
             Browser = browser;
             OperatingSystem = operatingSystem;
             UserAgent = userAgent;
+        }
+
+        public void UpdateFingerprint(string fingerprint)
+        {
+            Fingerprint = fingerprint;
+            UpdatedDate = DateTime.UtcNow;
         }
 
         public void Rename(string deviceName)
@@ -133,54 +148,50 @@
         public void MarkAsTrusted()
         {
             IsTrusted = true;
+            UpdatedDate = DateTime.UtcNow;
         }
 
         public void RemoveTrust()
         {
             IsTrusted = false;
-        }
-
-        #endregion
-
-        #region Session
-
-        public void Activate()
-        {
-            IsActive = true;
-        }
-
-        public void Deactivate()
-        {
-            IsActive = false;
+            UpdatedDate = DateTime.UtcNow;
         }
 
         #endregion
 
         #region Refresh Token
 
-        public void AddRefreshToken(
-            RefreshToken refreshToken)
+        public void AddRefreshToken(RefreshToken refreshToken)
         {
+            ArgumentNullException.ThrowIfNull(refreshToken);
+
             _refreshTokens.Add(refreshToken);
+
+            LastSeen = DateTime.UtcNow;
+            UpdatedDate = DateTime.UtcNow;
+        }
+
+        public void RevokeAllRefreshTokens()
+        {
+            foreach (var token in _refreshTokens.Where(x => x.IsActive))
+            {
+                token.Revoke();
+            }
+
+            UpdatedDate = DateTime.UtcNow;
+        }
+
+        public bool HasActiveSession()
+        {
+            return _refreshTokens.Any(x => x.IsActive);
+        }
+
+        public RefreshToken? GetCurrentRefreshToken()
+        {
+            return _refreshTokens
+                .SingleOrDefault(x => x.IsActive);
         }
 
         #endregion
-    }
-
-    public class DeviceInfo
-    {
-        public string? IPAddress { get; set; }
-
-        public string? OperatingSystem { get; set; }
-
-        public string? Browser { get; set; }
-
-        public string? UserAgent { get; set; }
-
-        public string? DeviceName { get; set; }
-
-        public string? Country { get; set; }
-
-        public string? City { get; set; }
     }
 }

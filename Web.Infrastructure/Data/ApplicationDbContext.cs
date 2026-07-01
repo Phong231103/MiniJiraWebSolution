@@ -148,5 +148,13 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                             j.ToTable("UserRoles");
                         });
         });
+
+        builder.Entity<Device>(entity =>
+        {
+            entity.HasMany(u => u.RefreshTokens)
+                  .WithOne(d => d.Device)
+                  .HasForeignKey(d => d.DeviceId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

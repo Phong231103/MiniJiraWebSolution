@@ -19,7 +19,7 @@
         private RefreshToken() { }
 
         // Factory method để tạo Refresh Token mới
-        public static RefreshToken Create(Guid userId, Guid deviceId, string token, DateTime expires)
+        public static RefreshToken Create(Guid userId, Guid deviceId, string token)
         {
             return new RefreshToken
             {
@@ -27,7 +27,7 @@
                 DeviceId = deviceId,
                 UserId = userId,
                 Token = token,
-                Expires = expires,
+                Expires = DateTime.UtcNow.AddDays(90),
                 IsRevoked = false,
                 Created = DateTime.UtcNow
             };
